@@ -4,18 +4,24 @@ main
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
+
+from src.modules.lower_layer_modules.Exceptions import Error
+from src.sections.section2_gates import gates
 
 
 async def main() -> None:
     """
     main
     """
-    prefix_directory: Path = Path(__file__).parent.parent
-    setting_directory: Path = prefix_directory / "settings"
+    # prefix_directory: Path = Path(__file__).parent.parent
+    # setting_directory: Path = prefix_directory / "settings"
     try:
-        pass
+        gates()
+
     except KeyboardInterrupt:
+        exit(1)
+    except Error as error:
+        print(error.args[0])
         exit(1)
 
 
