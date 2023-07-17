@@ -4,20 +4,24 @@ main
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 from src.modules.lower_layer_modules.Exceptions import Error
-from src.sections.section3_mnist import call_mnist
+from src.sections.section4_main import mini_batch_learning
 
 
 async def main() -> None:
     """
     main
     """
-    # prefix_directory: Path = Path(__file__).parent.parent
+    prefix_directory: Path = Path(__file__).parent.parent
+    data_directory: Path = prefix_directory / "data"
     # setting_directory: Path = prefix_directory / "settings"
     try:
         # gates()
-        call_mnist()
+        # call_mnist()
+        # make_sample_prediction(data_directory / "MNIST" / "sample_weight.pkl")
+        mini_batch_learning()
 
     except KeyboardInterrupt:
         exit(1)
