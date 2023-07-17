@@ -1,5 +1,5 @@
 """
-main
+logical gates
 """
 from __future__ import annotations
 
