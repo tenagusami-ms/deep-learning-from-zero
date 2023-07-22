@@ -7,7 +7,7 @@ import asyncio
 from pathlib import Path
 
 from src.modules.lower_layer_modules.Exceptions import Error
-from src.sections.section4_main import mini_batch_learning
+from src.sections.section5_main import backprop
 
 
 async def main() -> None:
@@ -21,7 +21,9 @@ async def main() -> None:
         # gates()
         # call_mnist()
         # make_sample_prediction(data_directory / "MNIST" / "sample_weight.pkl")
-        mini_batch_learning()
+        # mini_batch_learning()
+        # gradient_check()
+        backprop()
 
     except KeyboardInterrupt:
         exit(1)

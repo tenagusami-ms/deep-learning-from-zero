@@ -9,7 +9,6 @@ from typing import Optional
 import numpy as np
 
 from src.modules.lower_layer_modules.Numbers_numpy import softmax
-from src.sections.section4_TwoLayerNet import cross_entropy_error
 
 
 @dataclasses.dataclass
@@ -65,16 +64,15 @@ class ReLULayer:
         """
         self.mask = (x <= 0)
         out: np.ndarray = x.copy()
-        out[self.mask] = 0
+        out[self.mask] = np.float64(0.0)
         return out
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
         """
         backward propagation
         """
-        dout[self.mask] = 0
-        dx = dout
-        return dx
+        dout[self.mask] = np.float64(0.0)
+        return dout
 
 
 class SigmoidLayer:
@@ -85,7 +83,7 @@ class SigmoidLayer:
         """
         forward propagation
         """
-        out: np.ndarray = 1 / (1 + np.exp(-x))
+        out: np.ndarray = np.float64(1.0) / (np.float64(1.0) + np.exp(-x))
         self.out = out
         return out
 
@@ -105,7 +103,7 @@ class AffineLayer:
         self.dweight: Optional[np.ndarray] = None
         self.dbias: Optional[np.ndarray] = None
 
-    def forward(self, x: np.ndarray):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
         forward propagation
         """
@@ -113,14 +111,13 @@ class AffineLayer:
         out: np.ndarray = np.dot(x, self.weight) + self.bias
         return out
 
-    def backward(self, dout: np.ndarray):
+    def backward(self, dout: np.ndarray) -> np.ndarray:
         """
         backward propagation
         """
-        dx: np.ndarray = np.dot(dout, self.weight.T)
         self.dweight = np.dot(self.x.T, dout)
         self.dbias = np.sum(dout, axis=0)
-        return dx
+        return np.dot(dout, self.weight.T)
 
 
 class SoftmaxWithLossLayer:
@@ -129,7 +126,7 @@ class SoftmaxWithLossLayer:
         self.y: Optional[np.ndarray] = None
         self.t: Optional[np.ndarray] = None
 
-    def forward(self, x: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray, t: np.ndarray) -> np.float64:
         """
         forward propagation
         """
@@ -143,5 +140,19 @@ class SoftmaxWithLossLayer:
         backward propagation
         """
         batch_size: int = self.t.shape[0]
-        dx: np.ndarray = (self.y - self.t) / batch_size
-        return dx
+        return (self.y - self.t) / batch_size
+
+
+def cross_entropy_error(prediction: np.ndarray, training_labels: np.ndarray) -> np.float64:
+    """
+    cross-entropy error
+    """
+    if prediction.ndim == 1:
+        training_labels = training_labels.reshape(1, training_labels.size)
+        prediction = prediction.reshape(1, prediction.size)
+    if training_labels.size == prediction.size:
+        training_labels = training_labels.argmax(axis=1)
+    batch_size: int = prediction.shape[0]
+    return (
+            -np.sum(np.log(prediction[np.arange(batch_size), training_labels.astype(np.int64)] + np.float64(1.0e-7)))
+            / np.float64(batch_size))

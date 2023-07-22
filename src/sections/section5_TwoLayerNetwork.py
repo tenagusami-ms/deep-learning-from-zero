@@ -4,6 +4,7 @@ section4 main
 from __future__ import annotations
 
 import dataclasses
+from collections import OrderedDict
 from typing import MutableMapping, Callable, Mapping
 
 import numpy as np
@@ -34,10 +35,11 @@ class TwoLayerNetworkBackprop:
         self.parameters["W2"] = weight_init_std * np.random.randn(hidden_layer_size, output_layer_size)
         self.parameters["b2"] = np.zeros(output_layer_size)
 
-        object.__setattr__(self, "layers", dict())
-        self.layers["Affine1"] = AffineLayer(self.parameters["W1"], self.parameters["b1"])
-        self.layers["Relu1"] = ReLULayer()
-        self.layers["Affine2"] = AffineLayer(self.parameters["W2"], self.parameters["b2"])
+        layers: OrderedDict = OrderedDict()
+        layers["Affine1"] = AffineLayer(self.parameters["W1"], self.parameters["b1"])
+        layers["Relu1"] = ReLULayer()
+        layers["Affine2"] = AffineLayer(self.parameters["W2"], self.parameters["b2"])
+        object.__setattr__(self, "layers", layers)
         object.__setattr__(self, "last_layer", SoftmaxWithLossLayer())
 
     def predict(self, x: np.ndarray) -> np.ndarray:
@@ -48,14 +50,14 @@ class TwoLayerNetworkBackprop:
             x = layer.forward(x)
         return x
 
-    def loss(self, x: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def loss_function(self, x: np.ndarray, t: np.ndarray) -> np.float64:
         """
         loss
         """
         y: np.ndarray = self.predict(x)
         return self.last_layer.forward(y, t)
 
-    def accuracy(self, x: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def accuracy(self, x: np.ndarray, t: np.ndarray) -> np.float64:
         """
         accuracy
         """
@@ -63,19 +65,43 @@ class TwoLayerNetworkBackprop:
         y = np.argmax(y, axis=1)
         if t.ndim != 1:
             t: np.ndarray = np.argmax(t, axis=1)
-        accuracy: np.ndarray = np.sum(y == t) / float(x.shape[0])
+        accuracy: np.flat64 = np.sum(y == t) / float(x.shape[0])
         return accuracy
 
     def numerical_gradient(self, x: np.ndarray, t: np.ndarray) -> Mapping[str, np.ndarray]:
         """
         numerical gradient
         """
-        loss_weight: Callable[[np.ndarray], np.ndarray] = lambda weight: self.loss(x, t)
+        loss_weight: Callable[[np.ndarray], np.ndarray] = lambda weight: self.loss_function(x, t)
         gradients: MutableMapping[str, np.ndarray] = dict()
         gradients["W1"] = numerical_gradient(loss_weight, self.parameters["W1"])
         gradients["b1"] = numerical_gradient(loss_weight, self.parameters["b1"])
         gradients["W2"] = numerical_gradient(loss_weight, self.parameters["W2"])
         gradients["b2"] = numerical_gradient(loss_weight, self.parameters["b2"])
+        return gradients
+
+    def gradient(self, x, t):
+        """
+        gradient with backprop
+        """
+        # forward
+        self.loss_function(x, t)
+
+        # backward
+        dout: np.float64 | np.ndarray = np.float64(1.0)
+        dout = self.last_layer.backward(dout)
+        layers = list(self.layers.values())
+        layers.reverse()
+        for layer in layers:
+            dout = layer.backward(dout)
+
+        # setting
+        gradients: MutableMapping[str, np.ndarray] = dict()
+        gradients["W1"] = self.layers["Affine1"].dweight
+        gradients["b1"] = self.layers["Affine1"].dbias
+        gradients["W2"] = self.layers["Affine2"].dweight
+        gradients["b2"] = self.layers["Affine2"].dbias
+
         return gradients
 
 
